@@ -1,4 +1,3 @@
-import math
 import argparse
 import itertools
 
@@ -19,7 +18,7 @@ def read_data(path=args.input_file):
 
 
 def apriori(data=read_data(), support=args.min_sup/100, k=2):
-    candidates = {frozenset([i]) for i in set(chain(*data))}
+    candidates = set(frozenset([i]) for i in set(chain(*data)))
 
     def scan_data(data=data, candidates=candidates):
         candidate_count = defaultdict(int)
@@ -34,9 +33,13 @@ def apriori(data=read_data(), support=args.min_sup/100, k=2):
         return res
 
     def item_set(can, k=2):
+        new_candidates = []
         itemset = scan_data(candidates=can)
-        new_candidates = {i.union(j) for i in itemset for j in itemset if len(i.union(j)) == k}
-        return new_candidates, itemset
+        for i in itemset:
+            for j in itemset:
+                if len(i.union(j)) == k:
+                    new_candidates.append(i.union(j))
+        return set(new_candidates), itemset
 
     res = {}
     while candidates:
@@ -45,8 +48,21 @@ def apriori(data=read_data(), support=args.min_sup/100, k=2):
     return res
 
 
-def rules(parameter_list):
-    pass
+def rules(freq, confidence=.0):
+    def f(item):
+        return freq[len(item)][item]
+
+    for key, value in freq.items():
+        if key >= 1:
+            for item in value:
+                k = [combinations(item, i) for i, e in enumerate(item, 1)]
+                for element in map(frozenset, chain(*k)):
+                    remain = item.difference(element)
+                    if remain:
+                        (a, b), (c, d) = f(item).as_integer_ratio(), f(element).as_integer_ratio()
+                        conf = (a/b)/(c/d)
+                        if conf >= confidence:
+                            yield element, remain, round(f(item) * 100, 2), round(conf * 100, 2)
 
 
 def write_data(rules, path=args.output_file):
@@ -61,4 +77,5 @@ def write_data(rules, path=args.output_file):
 
 if __name__ == "__main__":
     res = apriori()
-    print(res)
+    rules = list(rules(res))
+    write_data(rules)

@@ -39,7 +39,7 @@ def apriori(data, support):
         filtered = scan()
         result[k-1] = filtered
         candidates = {i.union(j) for i in filtered for j in filtered if len(i.union(j)) == k}
-        # print('candidates:>>>', type(candidates))
+        print('candidates:>>>', candidates)
         k += 1
     return result
 
@@ -56,7 +56,6 @@ def define(freq, transactions, confidence=.0):
                     conf = (a/b)/(c/d)
                     if conf >= confidence:
                         yield element, remain, rounding(f(item) * 100, 2), rounding(conf * 100, 2)
-
 
 
 with open('input.txt') as f:
