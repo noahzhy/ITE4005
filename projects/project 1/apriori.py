@@ -32,30 +32,21 @@ def apriori(data=read_data(), support=args.min_sup/100, k=2):
                res[key] = float(value/len(data))
         return res
 
-    def item_set(item, k=2):
+    def item_set(item, k):
         new_candidates = []
         for i in itemset:
             for j in itemset:
                 if len(i.union(j)) == k:
                     new_candidates.append(i.union(j))
         candidates = set(new_candidates)
-        return itemset
+        return candidates
 
     res = dict()
-    count = 0
-    # k = 2
     while candidates:
-        print(len(candidates))
-
         itemset = scan_data(candidates=candidates)
-        res[k-1] = item_set(itemset, k)
+        res[k-1] = itemset
+        candidates = item_set(itemset, k)
         k += 1
-
-        # break
-
-        count += 1
-        if count >= 3:
-            break
     return res
 
 

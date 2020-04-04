@@ -35,6 +35,7 @@ def apriori(data, support):
 
     while candidates:
         filtered = scan()
+        print(len(filtered))
         result[k-1] = filtered
         candidates = {i.union(j) for i in filtered for j in filtered if len(i.union(j)) == k}
         # print('candidates:>>>', candidates)
@@ -45,6 +46,7 @@ def apriori(data, support):
 def define(res, transactions, confidence=.0):
     # print(res)
     def get_support(item):
+        # print(len(item))
         return res[len(item)][item]
 
     for key, value in res.items():
@@ -62,7 +64,7 @@ with open('input.txt') as f:
 
 
 freq = apriori(data, .05)
-print(freq)
+# print(freq)
 rules = list(define(freq, data))
 
 
