@@ -1,14 +1,13 @@
 import argparse
-import itertools
 
 from itertools import combinations, chain
 from collections import defaultdict
 
 
 parser = argparse.ArgumentParser(description='three arguments: minimum support, input file name, output file name')
-parser.add_argument('--min_sup', type=int, default=5, help='percent format')
-parser.add_argument('--input_file', type=str, default='input.txt')
-parser.add_argument('--output_file', type=str, default='output.txt')
+parser.add_argument('min_sup', type=int, default=5, help='percent format')
+parser.add_argument('input_file', type=str, default='input.txt')
+parser.add_argument('output_file', type=str, default='output.txt')
 args = parser.parse_args()
 
 
