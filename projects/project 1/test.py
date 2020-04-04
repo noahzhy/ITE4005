@@ -22,14 +22,12 @@ def apriori(data, support):
     def scan():
         count = defaultdict(int)
         for transaction in data:
-            # print(transaction)
             for candidate in candidates:
                 if candidate.issubset(transaction):
                     count[candidate] += 1
 
         res = {}
         for k, v in count.items():
-            # print(k, v, '>>>')
             if float(v)/len(data) >= support:
                res[k] = v/len(data)
         
@@ -39,23 +37,23 @@ def apriori(data, support):
         filtered = scan()
         result[k-1] = filtered
         candidates = {i.union(j) for i in filtered for j in filtered if len(i.union(j)) == k}
-        print('candidates:>>>', candidates)
+        # print('candidates:>>>', candidates)
         k += 1
     return result
 
 
-def define(freq, transactions, confidence=.0):
-    def f(item): return freq[len(item)][item]
-    for k, v in freq.items():
-        if k == 1: continue
-        for item in v:
-            for element in map(frozenset, chain(*[combinations(item, i) for i, e in enumerate(item, 1)])):
-                remain = item.difference(element)
-                if remain:
-                    (a, b), (c, d) = f(item).as_integer_ratio(), f(element).as_integer_ratio()
-                    conf = (a/b)/(c/d)
-                    if conf >= confidence:
-                        yield element, remain, rounding(f(item) * 100, 2), rounding(conf * 100, 2)
+def define(res, transactions, confidence=.0):
+    # print(res)
+    def get_support(item):
+        return res[len(item)][item]
+
+    for key, value in res.items():
+        for item in value:
+            elements = [combinations(item, i) for i, e in enumerate(item, 1)]
+            for ele in map(frozenset, chain(*elements)):
+                if item.difference(ele):
+                    conf = get_support(item) / get_support(ele)
+                    yield ele, item.difference(ele), round(get_support(item)*100, 2), round(conf*100, 2)
 
 
 with open('input.txt') as f:
@@ -64,6 +62,7 @@ with open('input.txt') as f:
 
 
 freq = apriori(data, .05)
+print(freq)
 rules = list(define(freq, data))
 
 

@@ -23,9 +23,9 @@ def apriori(data=read_data(), support=args.min_sup/100, k=2):
     def scan_data(data=data, candidates=candidates):
         candidate_count = defaultdict(int)
         for tid in data:
-            for can in candidates:
-                if can.issubset(tid):
-                    candidate_count[can] += 1
+            for cand in candidates:
+                if cand.issubset(tid):
+                    candidate_count[cand] += 1
         res = dict()
         for key, value in candidate_count.items():
             if float(value/len(data)) >= support:
@@ -38,15 +38,24 @@ def apriori(data=read_data(), support=args.min_sup/100, k=2):
             for j in itemset:
                 if len(i.union(j)) == k:
                     new_candidates.append(i.union(j))
-        candidates.update(set(new_candidates))
+        candidates = set(new_candidates)
         return itemset
 
     res = dict()
+    count = 0
+    # k = 2
     while candidates:
-        print(candidates)
+        print(len(candidates))
+
         itemset = scan_data(candidates=candidates)
         res[k-1] = item_set(itemset, k)
         k += 1
+
+        # break
+
+        count += 1
+        if count >= 3:
+            break
     return res
 
 
@@ -58,18 +67,17 @@ def rules(res):
         for item in value:
             elements = [combinations(item, i) for i, e in enumerate(item, 1)]
             for ele in map(frozenset, chain(*elements)):
-                diff = item.difference(ele)
-                if diff:
+                if item.difference(ele):
                     conf = get_support(item) / get_support(ele)
-                    yield ele, diff, round(get_support(item)*100, 2), round(conf*100, 2)
+                    yield ele, item.difference(ele), round(get_support(item)*100, 2), round(conf*100, 2)
 
 
 def write_data(rules, path=args.output_file):
     with open('output.txt', 'w') as f:
-        for item, asso, sup, conf in rules:
+        for item, ass, sup, conf in rules:
             f.write('{:10s}\t{:10s}\t{:.2f}\t{:.2f}\n'.format(
                 '{{{}}}'.format(','.join(map(str, item))),
-                '{{{}}}'.format(','.join(map(str, asso))),
+                '{{{}}}'.format(','.join(map(str, ass))),
                 sup,
                 conf
             ))
