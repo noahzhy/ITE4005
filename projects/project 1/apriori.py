@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 
 def read_data(path=args.input_file):
-    with open(path) as f:
+    with open(path, 'r') as f:
         return [list(map(int, line.split())) for line in f.readlines()]
 
 
@@ -63,13 +63,13 @@ def rules(res):
 
 
 def write_data(rules, path=args.output_file):
-    with open('output.txt', 'w') as f:
-        for item, ass, sup, conf in rules:
+    with open(path, 'w') as f:
+        for item, ass, support, confidence in rules:
             f.write('{:10s}\t{:10s}\t{:.2f}\t{:.2f}\n'.format(
                 '{{{}}}'.format(','.join(map(str, item))),
                 '{{{}}}'.format(','.join(map(str, ass))),
-                sup,
-                conf
+                support,
+                confidence
             ))
 
 
