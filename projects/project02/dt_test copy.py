@@ -1,5 +1,5 @@
 import os
-import math
+from math import log
 import argparse
 import pandas as pd
 import numpy as np
@@ -18,63 +18,60 @@ def load_data(train=args.train, test=args.test):
 
 
 class Node:
-    def __init__(self, attr=None, att_value=None, results=None, left=None, right=None):
+    def __init__(self, attr=None, value=None, leaf=None, left=None, right=None):
         self.attr = attr
-        self.att_value = att_value
-        self.results = results
+        self.value = value
+        self.leaf = leaf
         self.left = left
         self.right = right
 
 
 def recursive_tree(dataset):
+    def count(dataset):
+        label_counts = dict()
+        for feat in dataset:
+            label = feat[-1]
+            if label not in set(label_counts): label_counts[label] = 0
+            label_counts[label] += 1
+        return label_counts
+
     def entropy(dataset):
-        label_counts = count(dataset)
         e = .0
-        for label in label_counts:
-            p = float(label_counts[label]) / len(dataset)
-            e -= p * math.log(p, 2)
+        label_counts = count(dataset)
+        for key in label_counts:
+            p = float(label_counts[key]) / len(dataset)
+            e -= p * log(p, 2)
         return e
     
-    current_score = entropy(dataset)
+    base_e = entropy(dataset)
     best_gain = .0
-    _att = None
-    _splits = None
+    axis, value, splited = None, None, None
 
     for attr in range(0, len(dataset[0])-1):
-        for value in set([row[attr] for row in dataset]):
-            left = [row for row in dataset if row[attr] == value]
-            right = [row for row in dataset if not row[attr] == value]
+        for v in set([row[attr] for row in dataset]):
+            left = [row for row in dataset if row[attr] == v]
+            right = [row for row in dataset if not row[attr] == v]
 
             p = len(left) / float(len(dataset))
-            gain = current_score - p*entropy(left) - (1-p)*entropy(right)
+            gain = base_e - p*entropy(left) - (1-p)*entropy(right)
 
             if gain > best_gain:
                 best_gain = gain
-                _att = (attr, value)
-                _splits = (left, right)
+                axis = (attr, v)
+                splited = (left, right)
 
     if best_gain > 0:
-        return Node(attr=_att[0], att_value=_att[1], left=recursive_tree(_splits[0]), right=recursive_tree(_splits[1]))
+        return Node(attr=axis[0], value=axis[1], left=recursive_tree(splited[0]), right=recursive_tree(splited[1]))
     else:
-        return Node(results=count(dataset))
-
-
-def count(tups):
-    res = {}
-    for i in tups:
-        label = i[len(i)-1]
-        if label not in res:
-            res[label] = 0
-        res[label] += 1
-    return res
+        return Node(leaf=count(dataset))
 
 
 def Classifier(data, tree):
     def classify(row, tree):
-        if tree.results:
-            return tree.results
+        if tree.leaf:
+            return tree.leaf
         else:
-            branch = tree.left if row[tree.attr] == tree.att_value else tree.right
+            branch = tree.left if row[tree.attr] == tree.value else tree.right
             return classify(row, branch)
 
     [data[i].append(list(classify(data[i], tree).keys())[0]) for i in range(len(data))]
