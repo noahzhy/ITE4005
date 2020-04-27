@@ -1,6 +1,5 @@
-import sys
-from math import log
 import os
+import math
 import argparse
 import pandas as pd
 import numpy as np
@@ -29,49 +28,46 @@ class Node:
 
 def recursive_tree(df):
     def entropy(df):
-        results = count(df)
-        ent = .0
-        for label in results:
-            p = float(results[label]) / len(df)
-            ent = ent - p * log(p) / log(2)
-        return ent
+        label_counts = count(df)
+        e = .0
+        for label in label_counts:
+            p = float(label_counts[label]) / len(df)
+            e -= p * math.log(p, 2)
+        return e
     
     current_score = entropy(df)
-    top_value = .0
-    top_att = None
-    top_splits = None
-    column_count = len(df[0]) - 1
+    best_gain = .0
+    _att = None
+    _splits = None
 
-    for attr in range(0, column_count):
-        column_att_values = {}
+    for attr in range(0, len(df[0])-1):
+        att_values = dict()
 
         for row in df:
-            column_att_values[row[attr]] = 1
+            att_values[row[attr]] = 1
 
-        for att_value in column_att_values.keys():
-            left = [row for row in df if row[attr] == att_value]
-            right = [row for row in df if not row[attr] == att_value]
+        for value in att_values.keys():
+            left = [row for row in df if row[attr] == value]
+            right = [row for row in df if not row[attr] == value]
 
-            p = float(len(left)) / len(df)
+            p = len(left) / float(len(df))
             gain = current_score - p*entropy(left) - (1-p)*entropy(right)
 
-            if gain > top_value and len(left) > 0 and len(right) > 0:
-                top_value = gain
-                top_att = (attr, att_value)
-                top_splits = (left, right)
+            if gain > best_gain:
+                best_gain = gain
+                _att = (attr, value)
+                _splits = (left, right)
 
-    if top_value > 0:
-        Leftbranch = recursive_tree(top_splits[0])
-        Rightbranch = recursive_tree(top_splits[1])
-        return Node(attr=top_att[0], att_value=top_att[1], left=Leftbranch, right=Rightbranch)
+    if best_gain > 0:
+        return Node(attr=_att[0], att_value=_att[1], left=recursive_tree(_splits[0]), right=recursive_tree(_splits[1]))
     else:
         return Node(results=count(df))
 
 
 def count(tups):
     res = {}
-    for t in tups:
-        label = t[len(t)-1]
+    for i in tups:
+        label = i[len(i)-1]
         if label not in res:
             res[label] = 0
         res[label] += 1
@@ -86,23 +82,14 @@ def Classifier(data, tree):
             branch = tree.left if row[tree.attr] == tree.att_value else tree.right
             return classify(row, branch)
 
-    for i in range(len(data)):
-        data[i].append(list(classify(data[i], tree).keys())[0])
-
+    [data[i].append(list(classify(data[i], tree).keys())[0]) for i in range(len(data))]
     return data
-
-
-def save_result(data, header=""):
-    f = open(args.output, 'w')
-    f.write("\t".join(header))
-    [f.write("\n{}".format("\t".join(data[i]))) for i in range(len(data))]
-    return f.close()
 
 
 if __name__ == "__main__":
     train, test = load_data()
     result = Classifier(test, recursive_tree(train))
     header = pd.DataFrame(pd.read_csv(args.train, sep='\t')).columns.values
-    Result = save_result(result, header)
+    pd.DataFrame(result).to_csv(args.output, header=header, sep='\t')
 
-    os.system('dt_test.exe dt_answer1.txt dt_result1.txt')
+    os.system('dt_test.exe dt_answer1.txt {}'.format(args.output))

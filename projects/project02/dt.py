@@ -1,10 +1,9 @@
+import os
+import math
 import argparse
-import functools
-import collections
-import numpy as np
 import pandas as pd
+import numpy as np
 
-from itertools import chain
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--train", help="train data file",  default='dt_train1.txt', type=str)
@@ -12,94 +11,85 @@ parser.add_argument("--test", help="test data file", default='dt_test1.txt', typ
 parser.add_argument("--output", help="output path", default='dt_result1.txt', type=str)
 args = parser.parse_args()
 
-
-class DecisionTree():
-    def __init__(self, metric=0):
-        self.tree = None
-        self._metric = metric
-
-    def _terminal(self, train):
-        return collections.Counter(train[:, -1]).most_common()[0][0]
-  
-    def _tree(self, train, depth=1):
-        # gini index
-        _metric = lambda groups: sum([(1.-sum([(v/len(g))**2 for k, v in collections.Counter(g[:, -1]).items()])) * (len(g)/len(list(chain(*groups)))) for g in filter(np.any, groups)])
-        # split data where value lower than v and else
-        _split = lambda i, v: (train[np.where(train[:, i] < v)], train[np.where(train[:, i] >= v)])
-        # _split and calc value using _metric
-        _apply = np.vectorize(lambda v, i: _metric(_split(i, v)))
-        # get index of _applyed minimum
-        _mini = lambda uni, idx, i: idx[_apply(uni, i).argmin()]
-        
-        m = np.apply_along_axis(lambda i: _mini(*np.unique(train[:, i], return_index=True), i), 1, np.array([np.arange(self._c-1)]).T)
-        i, j = min(enumerate(m), key=lambda t: _metric(_split(t[0], train[t[1]][t[0]])))
-        l, r = _split(i, train[j][i])
-        
-        node = {
-            'index': i,
-            'value': train[j][i],
-            'left': l,
-            'right': r
-        }
-        
-        if not len(l) or not len(r):
-            node['left'] = self._terminal(np.concatenate([l, r]))
-            node['right'] = self._terminal(np.concatenate([l, r]))
-        elif depth >= self.max_depth:
-            node['left'] = self._terminal(l)
-            node['right'] = self._terminal(r)
-        else:
-            if len(l) < self.min_size:
-                node['left'] = self._terminal(l) 
-            else:
-                node['left'] = self._tree(l, depth+1)
-
-            if len(r) < self.min_size:
-                node['right'] = self._terminal(r)
-            else:
-                node['right'] = self._tree(r, depth+1)
-        return node
-    
-    def fit(self, X, y, max_depth, min_size=.0):
-        self.max_depth = max_depth
-        self.min_size = min_size
-        
-        train = np.concatenate([X, np.array([y]).T], axis=1)
-        self._r, self._c = train.shape
-        self.tree = self._tree(train)
-
-    def _predict(self, node, x):
-        tar = node['left'] if x[node['index']] < node['value'] else node['right']
-        return self._predict(tar, x) if isinstance(tar, dict) else tar
-    
-    def predict(self, X):
-        return np.apply_along_axis(functools.partial(self._predict, self.tree), 1, X)
-
-
 def load_data(train=args.train, test=args.test):
-    train = pd.read_csv(train, sep='\t')
-    # print(train)
-    test = pd.read_csv(test, sep='\t')
-    # parse data
-    labels = dict()
-    print(labels)
-    y_label = (set(train.columns) - set(test.columns)).pop()
-    print(y_label)
-    df = pd.concat([train, test])
+    train = pd.DataFrame(pd.read_csv(train, sep='\t'))
+    test = pd.DataFrame(pd.read_csv(test, sep='\t'))
+    return np.array(train).tolist(), np.array(test).tolist()
 
-    for i in df:
-        df[i], labels[i] = pd.factorize(df[i])
 
-    x_train = df.iloc[:len(train)].drop(y_label, axis=1)
-    x_test = df.iloc[len(train):].drop(y_label, axis=1)
-    y_train = df.iloc[:len(train)][y_label]
+class Node:
+    def __init__(self, attr=-1, att_value=None, results=None, left=None, right=None):
+        self.attr = attr
+        self.att_value = att_value
+        self.results = results
+        self.left = left
+        self.right = right
 
-    classifier = DecisionTree(0)
-    classifier.fit(x_train, y_train, 16, 0)
-    test[y_label] = pd.Series(map(lambda y: labels[y_label][y], classifier.predict(x_test)))
-    test.to_csv(args.output, sep='\t', index=None)
-    # answer = pd.read_csv('dt_answer1.txt', sep='\t')
-    # print(sum(test[y_label] == answer[y_label]), len(test[y_label]))
+
+def recursive_tree(df):
+    def entropy(df):
+        label_counts = count(df)
+        e = .0
+        for label in label_counts:
+            p = float(label_counts[label]) / len(df)
+            e -= p * math.log(p, 2)
+        return e
+    
+    current_score = entropy(df)
+    best_gain = .0
+    _att = None
+    _splits = None
+
+    for attr in range(0, len(df[0])-1):
+        att_values = dict()
+
+        for row in df:
+            att_values[row[attr]] = 1
+
+        for value in att_values.keys():
+            left = [row for row in df if row[attr] == value]
+            right = [row for row in df if not row[attr] == value]
+
+            p = len(left) / float(len(df))
+            gain = current_score - p*entropy(left) - (1-p)*entropy(right)
+
+            if gain > best_gain:
+                best_gain = gain
+                _att = (attr, value)
+                _splits = (left, right)
+
+    if best_gain > 0:
+        return Node(attr=_att[0], att_value=_att[1], left=recursive_tree(_splits[0]), right=recursive_tree(_splits[1]))
+    else:
+        return Node(results=count(df))
+
+
+def count(tups):
+    res = {}
+    for i in tups:
+        label = i[len(i)-1]
+        if label not in res:
+            res[label] = 0
+        res[label] += 1
+    return res
+
+
+def Classifier(data, tree):
+    def classify(row, tree):
+        if tree.results:
+            return tree.results
+        else:
+            branch = tree.left if row[tree.attr] == tree.att_value else tree.right
+            return classify(row, branch)
+
+    [data[i].append(list(classify(data[i], tree).keys())[0]) for i in range(len(data))]
+    return data
+
 
 if __name__ == "__main__":
-    load_data()
+    train, test = load_data()
+    result = Classifier(test, recursive_tree(train))
+    header = pd.DataFrame(pd.read_csv(args.train, sep='\t')).columns.values
+    pd.DataFrame(result).to_csv(args.output, header=header, sep='\t')
+
+    os.system('dt_test.exe dt_answer1.txt {}'.format(args.output))
