@@ -26,8 +26,8 @@ class Node:
         self.right = right
 
 
-def recursive_tree(dataset):
-    def count(dataset):
+def tree(dataset):
+    def labels(dataset):
         label_counts = dict()
         for feat in dataset:
             label = feat[-1]
@@ -37,33 +37,28 @@ def recursive_tree(dataset):
 
     def entropy(dataset):
         e = .0
-        label_counts = count(dataset)
+        label_counts = labels(dataset)
         for key in label_counts:
             p = float(label_counts[key]) / len(dataset)
             e -= p * log(p, 2)
         return e
     
     base_e = entropy(dataset)
-    best_gain = .0
-    axis, value, splited = None, None, None
+    best_gain, best_attr, best_splited = .0, None, None
 
     for attr in range(0, len(dataset[0])-1):
         for v in set([row[attr] for row in dataset]):
-            left = [row for row in dataset if row[attr] == v]
-            right = [row for row in dataset if not row[attr] == v]
-
+            left, right = list(), list()
+            for row in dataset: left.append(row) if row[attr] == v else right.append(row)
             p = len(left) / float(len(dataset))
             gain = base_e - p*entropy(left) - (1-p)*entropy(right)
-
             if gain > best_gain:
-                best_gain = gain
-                axis = (attr, v)
-                splited = (left, right)
+                best_gain, best_attr, best_splited = gain, (attr, v), (left, right)
 
     if best_gain > 0:
-        return Node(attr=axis[0], value=axis[1], left=recursive_tree(splited[0]), right=recursive_tree(splited[1]))
+        return Node(attr=best_attr[0], value=best_attr[1], left=tree(best_splited[0]), right=tree(best_splited[1]))
     else:
-        return Node(leaf=count(dataset))
+        return Node(leaf=labels(dataset))
 
 
 def Classifier(data, tree):
@@ -80,8 +75,7 @@ def Classifier(data, tree):
 
 if __name__ == "__main__":
     train, test = load_data()
-    result = Classifier(test, recursive_tree(train))
     header = pd.DataFrame(pd.read_csv(args.train, sep='\t')).columns.values
-    pd.DataFrame(result).to_csv(args.output, header=header, index=False, sep='\t')
+    pd.DataFrame(Classifier(test, tree(train))).to_csv(args.output, header=header, index=False, sep='\t')
 
     os.system('dt_test.exe dt_answer1.txt {}'.format(args.output))
