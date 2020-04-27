@@ -90,6 +90,6 @@ if __name__ == "__main__":
     train, test = load_data()
     result = Classifier(test, recursive_tree(train))
     header = pd.DataFrame(pd.read_csv(args.train, sep='\t')).columns.values
-    pd.DataFrame(result).to_csv(args.output, header=header, sep='\t')
+    pd.DataFrame(result).to_csv(args.output, header=header, index=False, sep='\t')
 
     os.system('dt_test.exe dt_answer1.txt {}'.format(args.output))
