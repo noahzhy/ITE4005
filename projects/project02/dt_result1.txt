@@ -1,5 +1,5 @@
 buying	maint	doors	persons	lug_boot	safety	car_evaluation
-high	high	3	4	big	low	unacc
+med	vhigh	2	4	med	med	unacc
 low	high	4	4	small	low	unacc
 high	vhigh	4	4	med	med	unacc
 high	vhigh	4	more	big	low	unacc
