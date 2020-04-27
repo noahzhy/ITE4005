@@ -18,7 +18,7 @@ def load_data(train=args.train, test=args.test):
 
 
 class Node:
-    def __init__(self, attr=-1, att_value=None, results=None, left=None, right=None):
+    def __init__(self, attr=None, att_value=None, results=None, left=None, right=None):
         self.attr = attr
         self.att_value = att_value
         self.results = results
@@ -26,31 +26,26 @@ class Node:
         self.right = right
 
 
-def recursive_tree(df):
-    def entropy(df):
-        label_counts = count(df)
+def recursive_tree(dataset):
+    def entropy(dataset):
+        label_counts = count(dataset)
         e = .0
         for label in label_counts:
-            p = float(label_counts[label]) / len(df)
+            p = float(label_counts[label]) / len(dataset)
             e -= p * math.log(p, 2)
         return e
     
-    current_score = entropy(df)
+    current_score = entropy(dataset)
     best_gain = .0
     _att = None
     _splits = None
 
-    for attr in range(0, len(df[0])-1):
-        att_values = dict()
+    for attr in range(0, len(dataset[0])-1):
+        for value in set([row[attr] for row in dataset]):
+            left = [row for row in dataset if row[attr] == value]
+            right = [row for row in dataset if not row[attr] == value]
 
-        for row in df:
-            att_values[row[attr]] = 1
-
-        for value in att_values.keys():
-            left = [row for row in df if row[attr] == value]
-            right = [row for row in df if not row[attr] == value]
-
-            p = len(left) / float(len(df))
+            p = len(left) / float(len(dataset))
             gain = current_score - p*entropy(left) - (1-p)*entropy(right)
 
             if gain > best_gain:
@@ -61,7 +56,7 @@ def recursive_tree(df):
     if best_gain > 0:
         return Node(attr=_att[0], att_value=_att[1], left=recursive_tree(_splits[0]), right=recursive_tree(_splits[1]))
     else:
-        return Node(results=count(df))
+        return Node(results=count(dataset))
 
 
 def count(tups):
