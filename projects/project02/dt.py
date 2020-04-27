@@ -14,7 +14,7 @@ args = parser.parse_args()
 
 
 class DecisionTree():
-    def __init__(self, metric):
+    def __init__(self, metric=0):
         self.tree = None
         self._metric = metric
 
@@ -43,15 +43,21 @@ class DecisionTree():
         }
         
         if not len(l) or not len(r):
-            node['left'] = node['right'] = self._terminal(np.concatenate([l, r]))
+            node['left'] = self._terminal(np.concatenate([l, r]))
+            node['right'] = self._terminal(np.concatenate([l, r]))
         elif depth >= self.max_depth:
-            node['left'], node['right'] = self._terminal(l), self._terminal(r)
+            node['left'] = self._terminal(l)
+            node['right'] = self._terminal(r)
         else:
-            if len(l) <= self.min_size:
+            if len(l) < self.min_size:
                 node['left'] = self._terminal(l) 
             else:
                 node['left'] = self._tree(l, depth+1)
-            node['right'] = self._terminal(r) if len(r) <= self.min_size else self._tree(r, depth+1)
+
+            if len(r) < self.min_size:
+                node['right'] = self._terminal(r)
+            else:
+                node['right'] = self._tree(r, depth+1)
         return node
     
     def fit(self, X, y, max_depth, min_size=.0):
@@ -72,20 +78,23 @@ class DecisionTree():
 
 def load_data(train=args.train, test=args.test):
     train = pd.read_csv(train, sep='\t')
+    # print(train)
     test = pd.read_csv(test, sep='\t')
     # parse data
     labels = dict()
+    print(labels)
     y_label = (set(train.columns) - set(test.columns)).pop()
-
+    print(y_label)
     df = pd.concat([train, test])
+
     for i in df:
         df[i], labels[i] = pd.factorize(df[i])
 
     x_train = df.iloc[:len(train)].drop(y_label, axis=1)
     x_test = df.iloc[len(train):].drop(y_label, axis=1)
+    y_train = df.iloc[:len(train)][y_label]
 
     classifier = DecisionTree(0)
-    y_train = df.iloc[:len(train)][y_label]
     classifier.fit(x_train, y_train, 16, 0)
     test[y_label] = pd.Series(map(lambda y: labels[y_label][y], classifier.predict(x_test)))
     test.to_csv(args.output, sep='\t', index=None)

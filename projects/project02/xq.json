@@ -1,0 +1,15 @@
+{'age': 
+    {'>40': 
+        {'credit_rating': 
+            {'fair': 'yes', 
+                'excellent': 'no'
+            }
+        }, 
+        '<=30': 
+        {'student': {'no': 'no', 'yes': 'yes'
+            }
+        }, 
+'31...40': 
+'yes'
+    }
+}

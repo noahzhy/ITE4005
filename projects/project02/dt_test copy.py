@@ -13,15 +13,10 @@ parser.add_argument("--output", help="output path", default='dt_result1.txt', ty
 args = parser.parse_args()
 
 def load_data(file_path):
-    df = []
-    f = open(file_path, 'r')
-    for row in f:
-        row = row.strip().rstrip('\t')
-        tup = row.split('\t')
-        df.append(tup)
+    df = pd.DataFrame(pd.read_csv(file_path, sep='\t'))
+    df_data = np.array(df).tolist()
+    return df_data
 
-    # print(df)
-    return df
 #Unused in current version
 #Function when you don't have answer
 def Datasplit(my_data, ratio=0.75):
