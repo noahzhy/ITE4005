@@ -1,0 +1,30 @@
+the number of ratings that didn't be predicted: 0
+the number of ratings that were unproperly predicted [ex. >=10, <0, NaN, or format errors]: 0
+If the counted number is large, please check your codes again.
+
+The bigger value means that the ratings are predicted more incorrectly
+RMSE: 0.9732217
+the number of ratings that didn't be predicted: 0
+the number of ratings that were unproperly predicted [ex. >=10, <0, NaN, or format errors]: 0
+If the counted number is large, please check your codes again.
+
+The bigger value means that the ratings are predicted more incorrectly
+RMSE: 0.9636413
+the number of ratings that didn't be predicted: 0
+the number of ratings that were unproperly predicted [ex. >=10, <0, NaN, or format errors]: 0
+If the counted number is large, please check your codes again.
+
+The bigger value means that the ratings are predicted more incorrectly
+RMSE: 0.9564762
+the number of ratings that didn't be predicted: 0
+the number of ratings that were unproperly predicted [ex. >=10, <0, NaN, or format errors]: 0
+If the counted number is large, please check your codes again.
+
+The bigger value means that the ratings are predicted more incorrectly
+RMSE: 0.9538846
+the number of ratings that didn't be predicted: 0
+the number of ratings that were unproperly predicted [ex. >=10, <0, NaN, or format errors]: 0
+If the counted number is large, please check your codes again.
+
+The bigger value means that the ratings are predicted more incorrectly
+RMSE: 0.9541221
